@@ -18,7 +18,7 @@ do
 
     echo "begining run on $currentLoggedInUser user"
     if [ "$currentLoggedInUser" == "root" ] ||  [ "$currentLoggedInUser" == "admin" ] ||  [ "$currentLoggedInUser" == "daemon" ]; then
-	exit
+	exit 0
     fi
 
 #create user storage dir if not exists
