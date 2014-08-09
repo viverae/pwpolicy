@@ -3,18 +3,18 @@
 # This script looks at the age of a password and warns if older than $warnAge
 # Once it gets older than $maxAge, a system preferences is opened automatically for the user to do the reset.
 # It calculates this based on seconds
-
 warnAge="15552000" # This is about 6 months
 #warnAge="20000" #for testing
 maxAge="18144000" #about 7 months
 termNotifierPath='/Library/OneHealth/terminal-notifier.app/Contents/MacOS/terminal-notifier'
 companyName='OneHealth'
 exemptAccount='admin'
+expirationTime='2592000' # Seconds past maxAge to expiration
 sleep 5
 
 currentUser=`whoami | xargs echo -n`   #remove newline char from currentUser
 
-if [ "$currentUser" = "root" ] || ["$currentUser" = "$exemptAccount" ]; then
+if [ "$currentUser" = "root" ] || [ "$currentUser" = "$exemptAccount" ]; then
   echo "This tool cannot run as root or your exempt user."
   exit 0
 fi
@@ -67,6 +67,9 @@ else
   fi
     secondsSinceChanged=$(( $DateNowSecs - $lastChangePWSeconds))
     daysSinceChanged=$(( $secondsSinceChanged/60/60/24 ))
+    lockoutDate=$(( $maxAge+$expirationTime ))
+    daysTillLockout=$(( $lockoutDate/60/60/24 ))
+
     echo "$currentUser has a password that is $daysSinceChanged days old."
     if [ $secondsSinceChanged -gt $warnAge ] && [ $secondsSinceChanged -lt $maxAge ] ;then
       secsTillExpire=$(( $maxAge - secondsSinceChanged ))
@@ -89,8 +92,8 @@ EOF
         `"$termNotifierPath"  -title "$companyName Message" -activate "com.apple.systempreferences" -message "The password for this computer will expire in $daysTillExpire days. Please change it immediately."`
       fi
   elif [ $secondsSinceChanged -gt $maxAge ] ;then
-      echo "WARNING: $currentUser HAS AN OLD PASSWORD. It's been $daysSinceChanged days since changed."
-      /usr/bin/osascript <<-EOF2
+    echo "WARNING: $currentUser HAS AN OLD PASSWORD. It's been $daysSinceChanged days since changed. You will be locked out in $daysTillLockout days."
+    /usr/bin/osascript <<-EOF2
               tell application "System Events"
               activate
               display dialog "$companyName Warning: The password for account $currentUser is $daysSinceChanged days old and has expired. You must change it immediately using System Preferences, 'Users & Groups' button." buttons "OK" default button 1 with icon 2
@@ -107,4 +110,8 @@ EOF2
                  end tell
 EOF4
   fi
+fi
+
+if [ $secondsSinceChanged -gt $lockoutDate ]; then
+  pwpolicy setpolicy newPasswordRequired=1
 fi
