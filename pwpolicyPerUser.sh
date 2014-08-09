@@ -1,9 +1,13 @@
 #!/bin/sh
 
-#written by Todd Houle
-#Updated for OneHealth by Taylor Price
-#15May2014
 # to deploy pwpolicy to the currently logged in user, not all users or global 'cause that screws up other stuff
+
+maxFailedLoginAttempts='5'
+requiresAlpha='1'
+requiresNumeric='1'
+minChars='8'
+usingHistory='4'
+exemptAccount='admin'
 
 #get list of users who are logged in
 currentLoggedInUsers=`w -h | grep console| sort -u -t' ' -k1,1|awk '{print $1}'`
@@ -17,7 +21,7 @@ printf %s "$currentLoggedInUsersCR" | while IFS=$'\n' read -r currentLoggedInUse
 do
 
     echo "begining run on $currentLoggedInUser user"
-    if [ "$currentLoggedInUser" == "root" ] ||  [ "$currentLoggedInUser" == "admin" ] ||  [ "$currentLoggedInUser" == "daemon" ]; then
+    if [ "$currentLoggedInUser" == "root" ] ||  [ "$currentLoggedInUser" == "$exemptAccount" ] ||  [ "$currentLoggedInUser" == "daemon" ]; then
 	exit 0
     fi
 
@@ -26,7 +30,7 @@ do
         mkdir -p /Library/OneHealth/Partners/Library
 	mkdir -p /Library/OneHealth/Partners/Library/passwordPolicyPerUser
 	echo "pwpolicyPerUser.sh will create one file per user so pwpolicy is set only once for each user" > /Library/OneHealth/Partners/Library/passwordPolicyPerUser/readme.txt
-	`pwpolicy -setglobalpolicy "usingHistory=4"`
+	`pwpolicy -setglobalpolicy "usingHistory=$usingHistory"`
     fi
 
 #run only once per user
@@ -34,7 +38,7 @@ do
 	echo "policy exists for $currentLoggedInUser"
     else
 	echo "setting $currentLoggedInUser policy"
-        `pwpolicy -u $currentLoggedInUser -setpolicy "maxFailedLoginAttempts=5 requiresAlpha=1 requiresNumeric=1 minChars=8 usingHistory=4"`
+        `pwpolicy -u $currentLoggedInUser -setpolicy "maxFailedLoginAttempts=$maxFailedLoginAttempts requiresAlpha=$requiresAlpha requiresNumeric=$requiresNumeric minChars=$minChars usingHistory=$usingHistory"`
         `touch /Library/OneHealth/Partners/Library/passwordPolicyPerUser/$currentLoggedInUser`
     fi
 done

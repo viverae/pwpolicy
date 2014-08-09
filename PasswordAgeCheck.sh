@@ -1,10 +1,9 @@
 #!/bin/sh
-#written by Todd Houle
-#modified for OneHealth by Taylor Price
 
 # This script looks at the age of a password and warns if older than $warnAge
 # Once it gets older than $maxAge, a system preferences is opened automatically for the user to do the reset.
 # It calculates this based on seconds
+
 warnAge="15552000" # This is about 6 months
 #warnAge="20000" #for testing
 maxAge="18144000" #about 7 months
